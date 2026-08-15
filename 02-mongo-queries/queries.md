@@ -197,3 +197,87 @@ db.listingsAndReviews.find({
 })
 ```
 
+---
+## Misc Mongo Technique
+### Find document by its id
+```
+use sample_mflix
+db.movies.find({
+    "_id":ObjectId("573a1391f29313caabcd6d40")
+})
+```
+
+### Find by a key in an object inside an array
+Find all listings that have been reviewed by "Alex"
+```
+db.listingsAndReviews.find({
+    "reviews":{
+        "$elemMatch":{
+            "reviewer_id":"40057503"
+        }
+    }
+}, {
+    "name": 1,
+    "reviews.$": 1
+})
+```
+### Match by date
+Find all listings first reviewd before 2024 30th Dec
+```
+db.listingsAndReviews.find({
+    'first_review': {
+        "$lt": ISODate("2024-12-30")
+    }
+}, {"name": 1, "first_review":1})
+```
+
+### Find by string patterns
+Find all listings which name includes the word "seaside"
+```
+db.listingsAndReviews.find({
+    'name': {
+        "$regex":"seaside", $options:"i"
+    }
+},{
+    "name": 1
+})
+```
+### Logical Operators
+Find all listings that from Canada or Brazil
+```
+db.listingsAndReviews.find({
+    "$or": [
+        {
+            "address.country":"Canada"
+        },
+        {
+            "address.country":"Brazil"
+        }
+    ]
+}, {
+    'name':1,
+    'address.country': 1
+})
+```
+
+Search for all listings that are in either Brazil or Canada. If in Brazil, must have at least 5 beds
+
+```
+db.listingsAndReviews.find({
+    "$or": [
+        {
+            "address.country":"Canada"
+        },
+        {
+            "address.country":"Brazil",
+            "beds": {
+                "$gte": 5
+            }
+        }
+    ]
+}, {
+    'name':1,
+    'address.country': 1,
+    'beds':1
+})
+```
