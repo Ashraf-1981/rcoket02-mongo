@@ -1,0 +1,19 @@
+[
+    {
+        "_id": {
+            "$oid": "6a7fffebd235bdbd77c9dd2f"
+        },
+        "name": "Yishun Swimming Complex"
+    },
+    {
+        "_id": {
+            "$oid": "6a7fffebd235bdbd77c9dd2d"
+        },
+        "name": "AMK Swimming Complex",
+        "address":{
+            "street_name":"AMK Ave 1",
+            "unit":"01-01",
+            "postal_code":"S123456"
+        }
+    }
+]

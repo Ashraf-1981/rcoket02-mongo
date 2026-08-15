@@ -1,0 +1,15 @@
+[
+    {
+        "_id": {
+            "$oid": "6a7ffc40353930a33055ca3d"
+        },
+        "name":"Tan Ah Mew",
+        "date_of_birth": {
+            "$date":"2010-11-23"
+        },
+        "gender":"f",
+        "parent_id": {
+            "$oid":"6a7ff850c53262011b2a8f3a"
+        }
+    }
+]

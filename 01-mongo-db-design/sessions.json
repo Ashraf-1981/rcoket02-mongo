@@ -1,0 +1,25 @@
+[
+    {
+        "_id": {
+            "$oid":"6a7fff7172b6e5b0264826b1"
+        },
+        "start": {
+            "$date":"2026-08-16T13:00:00.000Z"
+        },
+        "end": {
+            "$date":"2026-08-16T14:00:00.000Z"
+        },
+        "location": {
+            "$oid":"6a7fffebd235bdbd77c9dd2d",  
+            "name":"AMK Swimming Complex"
+        },
+        "students":[
+            {
+                "_id": {"$oid":"6a7ffc40353930a33055ca3d"},
+                "name":"Tan Ah Mew"
+            }
+        ],
+        "number_attending": 10
+    }
+      
+]

@@ -1,0 +1,42 @@
+[
+    {
+        "_id": {
+            "$oid": "6a7ff850c53262011b2a8f3a"
+        },
+        "name": "Tan Ah Kow",
+        "occupation": "Contractor",
+        "available_payment_types": [
+            "paynow",
+            "credit card"
+        ],
+        "address": {
+            "postal_code": 127127,
+            "street_name": "Yishun Ring Road",
+            "block_number": "666"
+        },
+        "contact_no": "+65 91391331",
+        "email":"tanahkow@gemail.com",
+        "payments":[
+            {"$oid":"6a7ffe0c825b522790f2f590"},
+            {"$oid":"6a7ffe0c825b522790f2f591"}
+        ]
+    },
+    {
+        "_id": {
+            "$oid": "6a7ff971d8cac7a771158f36"
+        },
+        "name": "Jon Snow",
+        "occupation": "Ranger",
+        "available_payment_types": [
+            "paynow",
+            "credit card"
+        ],
+        "address": {
+            "postal_code": 127127,
+            "street_name": "Yishun Ring Road",
+            "block_number": "666"
+        },
+        "contact_no": "+65 91391331",
+        "email":"jonsnow@asd.com"
+    }
+]
