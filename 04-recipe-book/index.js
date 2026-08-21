@@ -37,11 +37,14 @@ async function main() {
         // const ingredients = req.query.ingredients;
         // const name = req.query.name;
         // we can do array destructuring:
-        const { tags, cuisine, ingredients, name } = req.query;
 
-        const critera = {
+        // const { tags, cuisine, ingredients, name } = req.query;
 
-        }
+        // new crud challenge. 
+        const { tags, cuisine, ingredients, name, prepTimeMin, prepTimeMax, cookTimeMin, cookTimeMax, dish_type } = req.query;
+
+
+        const critera = {}
 
         if (cuisine) {
             critera["cuisine.name"] = { $regex: cuisine, $options: 'i' }
@@ -74,6 +77,34 @@ async function main() {
             })
         }
 
+        // added new
+        // Number(prepTimeMin/Max) is what the user type
+        if (prepTimeMin || prepTimeMax) {
+            critera.prepTime = {};
+            if (prepTimeMin) {
+                critera.prepTime.$gte = Number(prepTimeMin);
+            }
+            if (prepTimeMax) {
+                critera.prepTime.$lte = Number(prepTimeMax);
+            }
+        }
+
+        // Number(cookTimeMin/Max) is what the user type
+        if (cookTimeMin || cookTimeMax) {
+            critera.cookTime = {};
+            if (cookTimeMin) {
+                critera.cookTime.$gte = Number(cookTimeMin);
+            }
+            if (cookTimeMax) {
+                critera.cookTime.$lte = Number(cookTimeMax);
+            }
+        }
+
+        // add a new field dish_type
+        if (dish_type) {
+            critera.dish_type = dish_type;
+        }
+
         const recipes = await db.collection("recipes").find(critera).toArray();
         res.json({
             "recipes": recipes
@@ -87,7 +118,7 @@ async function main() {
 
         try {
 
-            const { name, cuisine, ingredients, instructions, tags, cookTime, prepTime, servings } = req.body
+            const { name, cuisine, ingredients, instructions, tags, cookTime, prepTime, servings, dish_type } = req.body
             if (!name || !cuisine || !ingredients || !instructions || !tags) {
                 return res.status(400).json({
                     'error': 'Missing required fields'
@@ -143,7 +174,8 @@ async function main() {
                 servings,
                 ingredients,
                 instructions,
-                tags: tagDocs
+                tags: tagDocs,
+                dish_type,
             }
 
             // insert into the database
@@ -189,7 +221,7 @@ async function main() {
     app.put('/recipes/:id', async function (req, res) {
 
         try {
-            const { name, cuisine, ingredients, instructions, tags, cookTime, prepTime, servings } = req.body
+            const { name, cuisine, ingredients, instructions, tags, cookTime, prepTime, servings, dish_type } = req.body
             if (!name || !cuisine || !ingredients || !instructions || !tags) {
                 return res.status(400).json({
                     'error': 'Missing required fields'
@@ -245,7 +277,8 @@ async function main() {
                 servings,
                 ingredients,
                 instructions,
-                tags: tagDocs
+                tags: tagDocs,
+                dish_type,
             }
 
             console.log(updatedRecipe);
