@@ -334,7 +334,7 @@ async function main() {
                  $pull : { recipes: new ObjectId(req.params.recipeId) }
             })
 
-             if (result.matchedCountCount === 0) {
+             if (result.matchedCount === 0) {
                 return res.status(404).json({
                     'error': 'Course Not found'
                 })
