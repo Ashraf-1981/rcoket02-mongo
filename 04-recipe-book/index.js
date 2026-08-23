@@ -77,29 +77,32 @@ async function main() {
             })
         }
 
+        // Qn 1
         // added new
         // Number(prepTimeMin/Max) is what the user type
         if (prepTimeMin || prepTimeMax) {
             critera.prepTime = {};
             if (prepTimeMin) {
-                critera.prepTime.$gte = Number(prepTimeMin);
+                critera.prepTime.$gt = Number(prepTimeMin);
             }
             if (prepTimeMax) {
-                critera.prepTime.$lte = Number(prepTimeMax);
+                critera.prepTime.$lt = Number(prepTimeMax);
             }
         }
 
+        // Qn 2
         // Number(cookTimeMin/Max) is what the user type
         if (cookTimeMin || cookTimeMax) {
             critera.cookTime = {};
             if (cookTimeMin) {
-                critera.cookTime.$gte = Number(cookTimeMin);
+                critera.cookTime.$gt = Number(cookTimeMin);
             }
             if (cookTimeMax) {
-                critera.cookTime.$lte = Number(cookTimeMax);
+                critera.cookTime.$lt = Number(cookTimeMax);
             }
         }
 
+        // Qn 3a
         // add a new field dish_type
         if (dish_type) {
             critera.dish_type = dish_type;
@@ -175,6 +178,7 @@ async function main() {
                 ingredients,
                 instructions,
                 tags: tagDocs,
+                // Qn 3b
                 dish_type,
             }
 
@@ -191,6 +195,105 @@ async function main() {
             })
         }
 
+    })
+
+    // Qn 4a
+    // Create a new collection-courses
+    // with keys -names and descriptions
+    app.post('/courses', async function (req, res) {
+
+        try {
+
+            const { name, description } = req.body
+            if (!name || !description) {
+                return res.status(400).json({
+                    'error': 'Missing required fields'
+                })
+            }
+
+            const newCourse = {
+                name,
+                description,
+                recipes: []
+            }
+
+            // insert into the new collection and database
+            const result = await db.collection("courses").insertOne(newCourse);
+            res.json({
+                'message': 'Course inserted successfully',
+                courseId: result.insertedId
+            })
+        }
+
+        catch (e) {
+            console.error(e);
+            return res.status(500).json({
+                'error': "Unable to insert new record"
+            })
+        }
+    })
+
+    // Qn 4b
+    // Add a recipe to the courses but need to findOne from collections-recipes
+    // Not editing/replacing just performing the action-add thats why do in post and not put
+    // Here req.body means the body inside arc
+    app.post('/courses/:id/recipes', async function (req, res) {
+
+        try {
+
+            const { recipeId } = req.body
+
+            // Validation by ID
+            if (!recipeId) {
+                return res.status(400).json({
+                    'error': 'Missing recipeId'
+                })
+            }
+
+            // If the recipdId does exists, move on
+            // Check if the recipe exists in recipes
+            const recipe = await db.collection("recipes").findOne({
+                _id: new ObjectId(recipeId)
+            });
+
+            if (!recipe) {
+                return res.status(400).json({
+                    'error': 'Recipe not found'
+                })
+            }
+
+            // If the recipe does exists, updateOne in courses
+            const result = await db.collection('courses').updateOne({
+                // Which document and  What change?
+                _id: new ObjectId(req.params.id)
+            },
+                {
+                    $push:
+                        // Push only the objectId(from recipes id) into courses-recipes []
+                        // which refers to the original recipes collections
+                        // Insert courseId into arc url and recipeId inside the body to update
+                        { recipes: new ObjectId(recipeId) }
+                }
+            )
+
+            // Check on the courses collections, check if the course exists
+            if (result.matchedCount === 0) {
+                return res.status(400).json({
+                    'error': "Course not found"
+                })
+            }
+
+            res.json ({
+                'message' : 'Recipe added to course'
+            })
+        }
+
+        catch (e) {
+            console.error(e);
+            return res.status(500).json({
+                'error': "Unable to add recipe to course"
+            })
+        }
     })
 
     app.delete('/recipes/:id', async function (req, res) {
@@ -217,6 +320,42 @@ async function main() {
             })
         }
     })
+
+    // Qn 4c
+    app.delete('/courses/:id/recipes/:recipeId', async function (req, res) {
+        try {
+
+            const result = await db.collection('courses').updateOne({
+                // 1st argumet
+                _id: new ObjectId(req.params.id)
+            },
+                // 2nd argument
+            {
+                 $pull : { recipes: new ObjectId(req.params.recipeId) }
+            })
+
+             if (result.matchedCountCount === 0) {
+                return res.status(404).json({
+                    'error': 'Course Not found'
+                })
+            }
+
+            res.json ({
+                'message': "Recipe remove from course"
+            })
+        }
+
+            catch (e) {
+            console.error(e);
+            res.status(500).json({
+                error: "Unable to remove recipe from course"
+            })
+        }
+    })
+
+
+
+
 
     app.put('/recipes/:id', async function (req, res) {
 
@@ -278,6 +417,7 @@ async function main() {
                 ingredients,
                 instructions,
                 tags: tagDocs,
+                // Qn 3c
                 dish_type,
             }
 
