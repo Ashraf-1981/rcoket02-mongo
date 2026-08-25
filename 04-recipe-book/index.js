@@ -3,6 +3,30 @@ require('dotenv').config();
 const cors = require('cors'); // cors = cross origin resources sharing
 const { connect } = require('./db')
 const { ObjectId } = require('mongodb');
+// Implement access and refresh token
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+
+// first parameter of jwt.sign: the payload/claims
+// second parameter is the token secret
+// third parameter is the config
+function generateAccessToken(id) {
+    return jwt.sign(
+        { user_id: id, role: "member" },
+        process.env.TOKEN_SECRET,
+        { expiresIn: '15m' }
+    )
+}
+
+function generateRefreshToken(id) {
+    return jwt.sign(
+        { user_id: id, role: "member" },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+    )
+}
+
 
 // 1. create express application
 const app = express();
@@ -283,8 +307,8 @@ async function main() {
                 })
             }
 
-            res.json ({
-                'message' : 'Recipe added to course'
+            res.json({
+                'message': 'Recipe added to course'
             })
         }
 
@@ -330,22 +354,22 @@ async function main() {
                 _id: new ObjectId(req.params.id)
             },
                 // 2nd argument
-            {
-                 $pull : { recipes: new ObjectId(req.params.recipeId) }
-            })
+                {
+                    $pull: { recipes: new ObjectId(req.params.recipeId) }
+                })
 
-             if (result.matchedCount === 0) {
+            if (result.matchedCount === 0) {
                 return res.status(404).json({
                     'error': 'Course Not found'
                 })
             }
 
-            res.json ({
+            res.json({
                 'message': "Recipe remove from course"
             })
         }
 
-            catch (e) {
+        catch (e) {
             console.error(e);
             res.status(500).json({
                 error: "Unable to remove recipe from course"
@@ -445,11 +469,149 @@ async function main() {
                 'error': 'Cannot update'
             })
         }
+    })
 
+    // access and refresh token
+    /**
+    * req.body.email: email address of the user
+    * req.body.password: password of the user
+    */
+    app.post('/users', async function (req, res) {
+        const password = await bcrypt.hash(req.body.password, 12);
+        const email = req.body.email;
 
+        const result = await db.collection('users').insertOne({
+            email, password
+        });
+        res.status(201).json({
+            'message': 'New user has been created',
+            result
+        })
+    })
 
+    // req.body.email = email of the user logging in
+    // req.body.password = password of the user logging in
+    app.post('/login', async function (req, res) {
+        // const req.body.email = req.body.email;
+        // const req.body.password = req.body.password;
+        const { email, password } = req.body;
 
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required"
+            })
+        }
 
+        // find the user by the given email address
+        const user = await db.collection("users").findOne({ email });
+
+        if (user) {
+            // check if the password
+            // first parameter of compare must be the plaintext
+            // second parameter is the hashed version
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({
+                    error: "Invalid credentials"
+                })
+            }
+
+            // TODO: create a JWT and send back to the client
+            const accessToken = generateAccessToken(user._id);
+            const refreshToken = generateRefreshToken(user._id);
+
+            // save refresh token to the user's document
+            await db.collection('users').updateOne({
+                _id: user._id
+            },
+                {
+                    $set: {
+                        refreshToken,
+                    }
+                }
+            )
+
+            res.json({
+                accessToken,
+                refreshToken
+            })
+
+        } else {
+            return res.status(401).json({
+                error: "Invalid credentials"
+            })
+        }
+    })
+
+    // Issue new access token
+    app.post('/refresh', async function (req, res) {
+
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json({
+                error: "Refresh token required"
+            })
+        }
+
+        // "Make sure this refresh token is given out and haven't logged out.
+        const user = await db.collection('users').findOne({ refreshToken });
+
+        if (!user) {
+            return res.status(403).json({ error: "Invalid refresh token" })
+        }
+
+        // verify the refresh token signature/expiry
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, function (err, payload) {
+
+            if (err) {
+                return res.status(403).json({
+                    error: "Invalid refresh token"
+                })
+            }
+
+            const newAccessToken = generateAccessToken(payload.user_id);
+            res.json({
+                accessToken: newAccessToken
+            })
+        })
+    })
+
+    // req and res - same as the one for the route function
+    // next will be a function that calls the next middleware, or if there's no middleware
+    // left to be call, call the function
+    function verifyToken(req, res, next) {
+
+        const authorization = req.headers.authorization;
+
+        // Testing
+        if (!authorization) {
+            return res.sendStatus(401);
+        }
+        const accessToken = authorization.split(" ")[1];
+        if (!accessToken) {
+            return res.sendStatus(401);
+        }
+
+        // use jwt.verify to test if the signature matches the hash of the payload + config
+        jwt.verify(accessToken, process.env.TOKEN_SECRET, function (err, payload) {
+
+            if (err) {
+                return res.sendStatus(403)
+            }
+
+            // you can add to the request in a middleware
+            // once the payload is added to req, the route can access it as the `user` key
+            req.user = payload;
+            next(); // this middleware is successfully (i.e no problem), call the next middleware
+        });
+    }
+
+    app.get('/test', [verifyToken], async function (req, res) {
+        res.json({
+            "message": "private profile is accessed",
+            "user": req.user
+        })
     })
 
 }
