@@ -510,6 +510,7 @@ async function main() {
             // first parameter of compare must be the plaintext
             // second parameter is the hashed version
             const isPasswordValid = await bcrypt.compare(password, user.password);
+
             if (!isPasswordValid) {
                 return res.status(401).json({
                     error: "Invalid credentials"
@@ -595,7 +596,7 @@ async function main() {
 
         // use jwt.verify to test if the signature matches the hash of the payload + config
         jwt.verify(accessToken, process.env.TOKEN_SECRET, function (err, payload) {
-
+           
             if (err) {
                 return res.sendStatus(403)
             }
